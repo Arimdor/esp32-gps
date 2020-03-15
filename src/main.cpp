@@ -30,8 +30,9 @@ TinyGsmClient client(modem);
 HttpClient http(client, server, port);
 
 //GPS VARS
-HardwareSerial SerialGPS(1);
-static const int RXD2 = 16, TXD2 = 17;
+HardwareSerial SerialGPS(2);
+static const int RXD2 = 14, TXD2 = 12;
+//SoftwareSerial SerialGPS(RXD2, TXD2);
 
 TinyGPSPlus gps;
 
@@ -102,20 +103,30 @@ void requestApiLocation()
   }
 }
 
-
 void getGPSData()
 {
   while (SerialGPS.available() > 0)
   {
-    gps.encode(SerialGPS.read());
+    if (gps.encode(SerialGPS.read()))
+    {
+      if (gps.location.isValid())
+      {
+        Serial.print("Lat: ");
+        Serial.print(gps.location.lat(), 5);
+        Serial.print(" Lng: ");
+        Serial.print(gps.location.lng(), 5);
+        Serial.print(" Alt: ");
+        Serial.print(gps.altitude.meters(), 0);
+        Serial.print(" Crs: ");
+        Serial.print(gps.course.deg(), 0);
+        Serial.print(" Spd: ");
+        Serial.print(gps.speed.kmph(), 0);
+        Serial.print(" Fix: ");
+        Serial.println(gps.satellites.value());
+      }
+    }
+    //Serial.write(SerialGPS.read());
   }
-
-  Serial.print("LAT=");
-  Serial.println(gps.location.lat(), 6);
-  Serial.print("LONG=");
-  Serial.println(gps.location.lng(), 6);
-  Serial.print("ALT=");
-  Serial.println(gps.altitude.meters());
 }
 
 /* Metodos de Arduino */
@@ -123,8 +134,9 @@ void setup()
 {
   Serial.begin(115200);
   Serial.println("Setup starting...");
+  delay(2000);
   SerialGPS.begin(9600, SERIAL_8N1, RXD2, TXD2);
-  delay(5000);
+  delay(2000);
 
   /* // Set modem reset, enable, power pins
   pinMode(MODEM_PWKEY, OUTPUT);
@@ -173,6 +185,4 @@ void loop()
 {
   //requestApiLocation();
   getGPSData();
-  Serial.println(SerialGPS.read());
-  delay(5000);
 }
